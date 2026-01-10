@@ -1,13 +1,14 @@
 const express = require("express");
 const cors = require("cors");
 const { v4: uuidv4 } = require("uuid");
+const path = require("path");
 
 // database helper (not used when running without a DB)
 // const { query } = require("./db");
 
 // using in-memory arrays for quick dev/testing
 
-
+const PORT = process.env.PORT || 5000;
 const app = express();
 app.use(cors());
 
