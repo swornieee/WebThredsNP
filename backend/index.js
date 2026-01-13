@@ -18,6 +18,15 @@ app.use('/uploads', express.static('uploads'));
 // parse JSON bodies for most routes (multipart will be handled by multer)
 app.use(express.json());
 
+// ─── Error Handling Middleware ───────────────────────────────
+const errorHandler = (err, req, res, next) => {
+  console.error("[Error]", err);
+  res.status(err.status || 500).json({
+    message: err.message || "Internal Server Error",
+    status: err.status || 500,
+  });
+};
+
 // ─── In-memory Data (used only for initial seeding) ────────────────────
 let products = [
   {
