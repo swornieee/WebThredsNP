@@ -27,6 +27,13 @@ const errorHandler = (err, req, res, next) => {
   });
 };
 
+// ─── Request Logging Middleware ──────────────────────────────
+const requestLogger = (req, res, next) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${req.method} ${req.path}`);
+  next();
+};
+
 // ─── In-memory Data (used only for initial seeding) ────────────────────
 let products = [
   {
