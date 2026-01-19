@@ -34,6 +34,13 @@ const requestLogger = (req, res, next) => {
   next();
 };
 
+// ─── Input Validation Utilities ──────────────────────────────
+const validators = {
+  email: (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
+  password: (password) => password && password.length >= 6,
+  productName: (name) => name && name.trim().length >= 3,
+};
+
 // ─── In-memory Data (used only for initial seeding) ────────────────────
 let products = [
   {
