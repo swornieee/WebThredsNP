@@ -41,6 +41,17 @@ const validators = {
   productName: (name) => name && name.trim().length >= 3,
 };
 
+// ─── Response Formatting Utilities ───────────────────────────
+const responses = {
+  success: (data) => ({ success: true, data }),
+  error: (message, status = 400) => ({ success: false, message, status }),
+  paginated: (data, total, page, limit) => ({
+    success: true,
+    data,
+    pagination: { total, page, limit, pages: Math.ceil(total / limit) },
+  }),
+};
+
 // ─── In-memory Data (used only for initial seeding) ────────────────────
 let products = [
   {
