@@ -18,6 +18,9 @@ app.use('/uploads', express.static('uploads'));
 // parse JSON bodies for most routes (multipart will be handled by multer)
 app.use(express.json());
 
+// Apply middleware
+app.use(requestLogger);
+
 // ─── Error Handling Middleware ───────────────────────────────
 const errorHandler = (err, req, res, next) => {
   console.error("[Error]", err);
