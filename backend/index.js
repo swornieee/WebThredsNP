@@ -215,9 +215,17 @@ let users = [
 app.post("/api/users/register", async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
 
-  // Validation
+  // Enhanced validation
   if (!firstName || !lastName || !email || !password) {
     return res.status(400).json({ message: "All fields are required" });
+  }
+  
+  if (!validators.email(email)) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
+  
+  if (!validators.password(password)) {
+    return res.status(400).json({ message: "Password must be at least 6 characters" });
   }
 
   try {
