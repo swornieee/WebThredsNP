@@ -264,6 +264,10 @@ app.post("/api/users/login", async (req, res) => {
   if (!email || !password) {
     return res.status(400).json({ message: "Email and password are required" });
   }
+  
+  if (!validators.email(email)) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
 
   try {
     const user = users.find((u) => u.email === email);
