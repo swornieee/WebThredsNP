@@ -367,8 +367,17 @@ app.post("/api/products", adminRequired, upload.single("image"), async (req, res
     featured,
   } = req.body;
 
+  // Enhanced validation
   if (!name || !brand || !category || !price) {
     return res.status(400).json({ message: "Name, brand, category and price are required" });
+  }
+  
+  if (!validators.productName(name)) {
+    return res.status(400).json({ message: "Product name must be at least 3 characters" });
+  }
+  
+  if (isNaN(Number(price)) || Number(price) <= 0) {
+    return res.status(400).json({ message: "Price must be a positive number" });
   }
 
   let imageUrl = "";
