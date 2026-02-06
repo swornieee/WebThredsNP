@@ -419,7 +419,19 @@ app.delete("/api/products/:id", adminRequired, (req, res) => {
 });
 
 // ─── Cart Routes ──────────────────────────────────────────────────
-app.get("/api/cart", (req, res) => res.json(cart));
+// Get cart with product details
+app.get("/api/cart", (req, res) => {
+  const cartWithDetails = cart.map((item) => ({
+    ...item,
+    subtotal: item.quantity * item.product.price,
+  }));
+  const total = cartWithDetails.reduce((sum, item) => sum + item.subtotal, 0);
+  res.json({
+    items: cartWithDetails,
+    total,
+    itemCount: cart.length,
+  });
+});
 
 app.post("/api/cart", (req, res) => {
   const { productId, quantity = 1 } = req.body;
