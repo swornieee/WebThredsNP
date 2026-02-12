@@ -497,7 +497,24 @@ app.get("/api/stats", (req, res) => {
     totalRevenue: orders.reduce((sum, o) => sum + o.total, 0),
   });
 });
+// ─── Health Check Routes ────────────────────────────────────
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || "development",
+  });
+});
 
+app.get("/api/stats", (req, res) => {
+  res.json({
+    totalProducts: products.length,
+    totalUsers: users.length,
+    totalOrders: orders.length,
+    cartItems: cart.length,
+  });
+});
 const PORT = 5000;
 app.listen(PORT, () => {
   console.log(`\n🚀 Threds NP Server running on http://localhost:${PORT}\n`);
