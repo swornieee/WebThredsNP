@@ -1,0 +1,15 @@
+{
+  "name": "threds-np",
+  "version": "1.0.0",
+  "description": "Threds NP - Premium Imported Fashion for Nepal",
+  "scripts": {
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd backend && node index.js",
+    "frontend": "cd frontend && npm run dev",
+    "start": "npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
