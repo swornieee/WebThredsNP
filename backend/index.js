@@ -2,8 +2,11 @@ const express = require("express");
 const cors = require("cors");
 const { v4: uuidv4 } = require("uuid");
 
-// database helper
-const { query } = require("./db");
+// database helper (not used when running without a DB)
+// const { query } = require("./db");
+
+// using in-memory arrays for quick dev/testing
+
 
 const app = express();
 app.use(cors());
@@ -180,26 +183,27 @@ app.post("/api/users/register", async (req, res) => {
   }
 
   try {
-    const { rows: existing } = await query("SELECT * FROM users WHERE email = $1", [email]);
-    if (existing.length) {
+    // check duplicate email in-memory
+    const existing = users.find((u) => u.email === email);
+    if (existing) {
       return res.status(400).json({ message: "Email already registered" });
     }
-
     const id = uuidv4();
     const createdAt = new Date().toISOString();
-    // Note: password should be hashed in production
-    const { rows } = await query(
-      `INSERT INTO users(id, firstname, lastname, email, password, isadmin, createdat)
-       VALUES($1,$2,$3,$4,$5,false,$6)
-       RETURNING id, firstname, lastname, email, isadmin`,
-      [id, firstName, lastName, email, password, createdAt]
-    );
-
-    const user = rows[0];
+    const newUser = {
+      id,
+      firstName,
+      lastName,
+      email,
+      password, // plain text for demo only
+      isAdmin: false,
+      createdAt,
+    };
+    users.push(newUser);
     res.status(201).json({
       message: "Account created successfully",
-      token: "token_" + user.id,
-      user,
+      token: "token_" + newUser.id,
+      user: { id, firstName, lastName, email, isAdmin: false },
     });
   } catch (err) {
     console.error("Register error", err);
@@ -216,21 +220,19 @@ app.post("/api/users/login", async (req, res) => {
   }
 
   try {
-    const { rows } = await query("SELECT * FROM users WHERE email=$1", [email]);
-    const user = rows[0];
+    const user = users.find((u) => u.email === email);
     if (!user || user.password !== password) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-
     res.json({
       message: "Login successful",
       token: "token_" + user.id,
       user: {
         id: user.id,
-        firstName: user.firstname,
-        lastName: user.lastname,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
-        isAdmin: user.isadmin,
+        isAdmin: user.isAdmin,
       },
     });
   } catch (err) {
@@ -248,9 +250,8 @@ async function adminRequired(req, res, next) {
   if (!token) return res.status(401).json({ message: "Authentication required" });
   const id = token.replace("token_", "");
   try {
-    const { rows } = await query("SELECT * FROM users WHERE id = $1", [id]);
-    const user = rows[0];
-    if (!user || !user.isadmin) {
+    const user = users.find((u) => u.id === id);
+    if (!user || !user.isAdmin) {
       return res.status(403).json({ message: "Admin access required" });
     }
     req.user = user;
@@ -266,12 +267,10 @@ const multer = require("multer");
 const upload = multer({ dest: "uploads/" });
 
 // ─── Products Routes ──────────────────────────────────────────────
-app.get("/api/products", async (req, res) => {
+app.get("/api/products", (req, res) => {
   const { category, search, featured, sort } = req.query;
   try {
-    const { rows } = await query("SELECT * FROM products");
-    let filtered = rows;
-
+    let filtered = [...products];
     if (category && category !== "All") {
       filtered = filtered.filter((p) => p.category === category);
     }
@@ -290,7 +289,6 @@ app.get("/api/products", async (req, res) => {
     if (sort === "price-asc") filtered.sort((a, b) => a.price - b.price);
     if (sort === "price-desc") filtered.sort((a, b) => b.price - a.price);
     if (sort === "rating") filtered.sort((a, b) => b.rating - a.rating);
-
     res.json(filtered);
   } catch (err) {
     console.error("GET /api/products error", err);
@@ -298,16 +296,10 @@ app.get("/api/products", async (req, res) => {
   }
 });
 
-app.get("/api/products/:id", async (req, res) => {
-  try {
-    const { rows } = await query("SELECT * FROM products WHERE id=$1", [req.params.id]);
-    const product = rows[0];
-    if (!product) return res.status(404).json({ message: "Product not found" });
-    res.json(product);
-  } catch (err) {
-    console.error("GET /api/products/:id error", err);
-    res.status(500).json({ message: "Server error" });
-  }
+app.get("/api/products/:id", (req, res) => {
+  const product = products.find((p) => p.id === req.params.id);
+  if (!product) return res.status(404).json({ message: "Product not found" });
+  res.json(product);
 });
 
 // allow only admins to add or remove products
@@ -338,41 +330,33 @@ app.post("/api/products", adminRequired, upload.single("image"), async (req, res
 
   try {
     const id = uuidv4();
-    const inserted = await query(
-      `INSERT INTO products(id,name,brand,origin,category,price,originalprice,image,description,stock,tags,featured)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-       RETURNING *`,
-      [
-        id,
-        name,
-        brand,
-        origin || "",
-        category,
-        Number(price),
-        Number(originalPrice) || Number(price),
-        imageUrl,
-        description || "",
-        Number(stock) || 0,
-        tags ? tags.split(",").map((t) => t.trim()) : [],
-        featured === "true" || featured === true,
-      ]
-    );
-    res.status(201).json(inserted.rows[0]);
+    const newProduct = {
+      id,
+      name,
+      brand,
+      origin: origin || "",
+      category,
+      price: Number(price),
+      originalPrice: Number(originalPrice) || Number(price),
+      image: imageUrl,
+      description: description || "",
+      stock: Number(stock) || 0,
+      tags: tags ? tags.split(",").map((t) => t.trim()) : [],
+      featured: featured === "true" || featured === true,
+    };
+    products.push(newProduct);
+    res.status(201).json(newProduct);
   } catch (err) {
     console.error("POST /api/products error", err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-app.delete("/api/products/:id", adminRequired, async (req, res) => {
-  try {
-    const { rows } = await query("DELETE FROM products WHERE id=$1 RETURNING *", [req.params.id]);
-    if (rows.length === 0) return res.status(404).json({ message: "Product not found" });
-    res.json({ message: "Product removed", product: rows[0] });
-  } catch (err) {
-    console.error("DELETE /api/products/:id error", err);
-    res.status(500).json({ message: "Server error" });
-  }
+app.delete("/api/products/:id", adminRequired, (req, res) => {
+  const index = products.findIndex((p) => p.id === req.params.id);
+  if (index === -1) return res.status(404).json({ message: "Product not found" });
+  const removed = products.splice(index, 1)[0];
+  res.json({ message: "Product removed", product: removed });
 });
 
 // ─── Cart Routes ──────────────────────────────────────────────────
