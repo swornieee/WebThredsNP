@@ -52,8 +52,8 @@ export default function Orders() {
         </div>
       ) : (
         <div className="space-y-5">
-          {orders.map((order) => (
-            <div key={order.id} className="card p-6 animate-fade-in">
+          {Array.isArray(orders) && orders.map((order) => (
+            <div key={order.id || Math.random()} className="card p-6 animate-fade-in">
               <div className="flex flex-wrap justify-between items-start gap-4 mb-5">
                 <div>
                   <div className="flex items-center gap-3">
@@ -68,13 +68,13 @@ export default function Orders() {
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-xl text-primary-600">NPR {order.total.toLocaleString()}</p>
-                  <p className="text-sm text-gray-500">{order.customer.payment === "cash" ? "Cash on Delivery" : order.customer.payment}</p>
+                  <p className="text-sm text-gray-500">{((order.customer?.payment || "cash") === "cash") ? "Cash on Delivery" : order.customer?.payment}</p>
                 </div>
               </div>
 
               <div className="flex gap-3 overflow-x-auto pb-2 mb-4">
-                {order.items.map((item) => (
-                  <div key={item.id} className="flex-shrink-0 flex items-center gap-3 bg-gray-50 rounded-xl p-3">
+                {(order.items || []).map((item) => (
+                  <div key={item.id || Math.random()} className="flex-shrink-0 flex items-center gap-3 bg-gray-50 rounded-xl p-3">
                     <img src={item.product.image} alt={item.product.name} className="w-12 h-12 object-cover rounded-lg" />
                     <div>
                       <p className="text-sm font-medium line-clamp-1 max-w-32">{item.product.name}</p>
@@ -85,9 +85,9 @@ export default function Orders() {
               </div>
 
               <div className="border-t pt-4 flex flex-wrap gap-4 text-sm text-gray-500">
-                <span>👤 {order.customer.name}</span>
-                <span>📍 {order.address}</span>
-                <span>📞 {order.customer.phone}</span>
+                <span>👤 {order.customer?.name || order.customer?.firstName || 'N/A'}</span>
+                <span>📍 {order.address || 'N/A'}</span>
+                <span>📞 {order.customer?.phone || 'N/A'}</span>
               </div>
             </div>
           ))}

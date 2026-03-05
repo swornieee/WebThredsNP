@@ -11,7 +11,15 @@ export function CartProvider({ children }) {
   const fetchCart = async () => {
     try {
       const res = await axios.get("/api/cart");
-      setCart(res.data);
+      // backend used to return an object with {items,...}, now returns an array
+      const payload = res.data;
+      if (payload && !Array.isArray(payload) && payload.items) {
+        setCart(payload.items);
+      } else if (Array.isArray(payload)) {
+        setCart(payload);
+      } else {
+        setCart([]);
+      }
     } catch (e) {
       console.error(e);
     }
